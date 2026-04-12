@@ -36,7 +36,7 @@ def get_publication_date(record):
 
 def fetch_pmids(query, retmax=5):
 # Recherche dans pubmed les études en kinésithérapie et mulligan
-    handle = Entrez.esearch(db='pubmed', retmax=5, term="physiotherapy and mulligan")
+    handle = Entrez.esearch(db='pubmed', retmax=retmax, term=query)
     record = Entrez.read(handle)
     return record['IdList'] #obtention des PMID, les identifiants uniques de chaque étude
 
@@ -80,14 +80,26 @@ def save_results(rows, excel_path="PubMed_resultsx.xlsx", json_path="resultats_p
     df = pd.DataFrame(rows)
     df.to_excel(excel_path, index=False)
     df.to_json(json_path, orient="records", force_ascii=False)
+    return df
+
+
+def get_pubmed_dataframe(email, query=None, retmax=5, save=False,
+                         excel_path="PubMed_resultsx.xlsx", json_path="resultats_pubmed.json"):
+    configuration(email)
+    if query is None:
+        query = build_query()
+    pmids = fetch_pmids(query, retmax=retmax)
+    rows = fetch_articles(pmids)
+    df = pd.DataFrame(rows)
+    if save:
+        df.to_excel(excel_path, index=False)
+        df.to_json(json_path, orient="records", force_ascii=False)
+    return df
 
 
 def main():
-    configuration("maguendra@gmail.com")
-    query = build_query()
-    pmids = fetch_pmids(query, retmax=5)
-    rows = fetch_articles(pmids)
-    save_results(rows)
+    df = get_pubmed_dataframe("maguendra@gmail.com", retmax=5, save=True)
+    return df
 
 
 if __name__ == "__main__":

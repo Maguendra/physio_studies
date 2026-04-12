@@ -1,4 +1,17 @@
-import argparse
+# *******************************************************
+# Nom ......... : requete_pubmed_FINAL.py
+# Role ........ : Interroger PubMed (API Entrez) et renvoyer les resultats sous forme de DataFrame pandas
+# Auteur ...... : Maguendra Codandamourty
+# Version ..... : V0.1 du 12/04/2026
+# Licence ..... : Realise dans le cadre du cours de S2 Outils Collaboratifs (Licence Informatique)
+# Dependencies  : Python 3.x, pandas, biopython
+# Compilation . : Aucune (langage interprete)
+# Execution ... : python3 requete_pubmed_FINAL.py
+# Usage ....... : Depuis un notebook/script :
+#                 from physio_studies.requete_pubmed_FINAL import get_pubmed_dataframe
+#                 df = get_pubmed_dataframe(email="maguendra@gmail.com", query="mulligan and physiotherapy", retmax=50)
+# *******************************************************
+
 import json
 import pandas as pd
 from Bio import Entrez
@@ -99,40 +112,8 @@ def fetch_rows(pmids, verbose=False):
     return rows
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Recherche PubMed et export des resultats (Excel, JSON, CSV)."
-    )
-    parser.add_argument(
-        "--query",
-        required=True,
-        help='Requete PubMed, ex: "physiotherapy AND mckenzie"',
-    )
-    parser.add_argument("--email", required=True, help="Email requis par NCBI Entrez")
-    parser.add_argument("--retmax", type=int, default=5, help="Nombre max de resultats")
-    parser.add_argument("--excel", default="PubMed_resultsx.xlsx", help="Fichier Excel")
-    parser.add_argument("--json", default="resultats_pubmed.json", help="Fichier JSON")
-    parser.add_argument("--csv", default="", help="Fichier CSV optionnel")
-    parser.add_argument(
-        "--no-excel",
-        action="store_true",
-        help="Desactive l export Excel (utile si openpyxl absent)",
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Affiche les enregistrements bruts Entrez",
-    )
-    return parser.parse_args()
-
-
-def main():
-    args = parse_args()
-    Entrez.email = args.email
-
-    pmids = fetch_pmids(args.query, args.retmax)
-    rows = fetch_rows(pmids, verbose=args.verbose)
-    df = pd.DataFrame(
+def build_dataframe(rows):
+    return pd.DataFrame(
         rows,
         columns=[
             "PMID",
@@ -146,16 +127,19 @@ def main():
         ],
     )
 
-    if not args.no_excel:
-        df.to_excel(args.excel, index=False)
 
-    df.to_json(args.json, orient="records", force_ascii=False, indent=2)
+def get_pubmed_dataframe(
+    email="maguendra@gmail.com",
+    query="",
+    retmax=5 #nombre de requête par défaut    
+    ):
+    Entrez.email = email
 
-    if args.csv:
-        df.to_csv(args.csv, index=False)
+    pmids = fetch_pmids(query, retmax)
+    rows = fetch_rows(pmids)
+    df = build_dataframe(rows)
+    return df
 
-    print(f"Termine: {len(df)} etudes exportees")
 
 
-if __name__ == "__main__":
-    main()
+
